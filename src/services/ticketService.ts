@@ -2,7 +2,7 @@ import api from './api';
 import type { Ticket } from '../types';
 
 export interface TicketFilters {
-  category: string;
+  category?: string | number;
   status?: string;
   priority?: string;
   assignedTo?: string;

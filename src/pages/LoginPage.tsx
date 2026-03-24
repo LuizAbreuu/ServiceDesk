@@ -19,9 +19,6 @@ export default function LoginPage() {
   const [authError, setAuthError]       = useState('');
   const [isLoading, setIsLoading]       = useState(false);
 
-  // Se já estiver logado, redireciona direto
-  if (user) return <Navigate to="/dashboard" replace />;
-
   const {
     register,
     handleSubmit,
@@ -29,6 +26,9 @@ export default function LoginPage() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  // Se já estiver logado, redireciona direto
+  if (user) return <Navigate to="/dashboard" replace />;
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);

@@ -45,6 +45,10 @@ export const userService = {
     await api.patch(`/users/${id}/reactivate`);
   },
 
+  async delete(id: string): Promise<void> {
+    await api.delete(`/users/${id}`);
+  },
+
   async getTeams(): Promise<Team[]> {
     const { data } = await api.get('/teams');
     return data;

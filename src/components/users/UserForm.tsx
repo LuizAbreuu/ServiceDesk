@@ -1,30 +1,61 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreateUser } from '../../hooks/useUsers';
-import { useTeams } from '../../hooks/useUsers';
+import { useCreateUser, useUpdateUser, useTeams } from '../../hooks/useUsers';
+import type { User } from '../../types';
 
 const schema = z.object({
   name:     z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
   email:    z.string().email('E-mail inválido'),
   role:     z.enum(['Admin', 'Manager', 'Agent', 'User']),
   teamId:   z.string().optional(),
-  password: z.string().min(8, 'Senha deve ter ao menos 8 caracteres'),
+  password: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
-export default function UserForm({ onSuccess }: { onSuccess: () => void }) {
-  const { mutate, isPending } = useCreateUser();
+export default function UserForm({ onSuccess, initialData }: { onSuccess: () => void; initialData?: User }) {
+  const { mutate: create, isPending: isCreating } = useCreateUser();
+  const { mutate: update, isPending: isUpdating } = useUpdateUser();
   const { data: teams = [] } = useTeams();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const isPending = isCreating || isUpdating;
+
+  const { register, handleSubmit, reset, setError, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { role: 'User' },
   });
 
+  useEffect(() => {
+    if (initialData) {
+      reset({
+        name: initialData.name,
+        email: initialData.email,
+        role: initialData.role,
+        teamId: initialData.teamId || '',
+        password: '',
+      });
+    }
+  }, [initialData, reset]);
+
   const onSubmit = (data: FormData) => {
-    mutate(data, { onSuccess });
+    if (!initialData && (!data.password || data.password.length < 8)) {
+      setError('password', { message: 'Senha inicial deve ter ao menos 8 caracteres' });
+      return;
+    }
+    
+    // Convert teamId to undefined if it's empty string
+    const payload = {
+      ...data,
+      teamId: data.teamId === "" ? undefined : data.teamId
+    };
+
+    if (initialData) {
+      update({ id: initialData.id, payload }, { onSuccess });
+    } else {
+      create(payload as any, { onSuccess });
+    }
   };
 
   const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6c63ff] focus:ring-1 focus:ring-[#6c63ff]/20 transition-all";
@@ -41,7 +72,7 @@ export default function UserForm({ onSuccess }: { onSuccess: () => void }) {
       {/* E-mail */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
-        <input {...register('email')} type="email" placeholder="joao@empresa.com" className={inputClass} />
+        <input {...register('email')} type="email" disabled={!!initialData} placeholder="joao@empresa.com" className={`${inputClass} disabled:opacity-50`} />
         {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
       </div>
 
@@ -67,9 +98,9 @@ export default function UserForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </div>
 
-      {/* Senha inicial */}
+      {/* Senha */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Senha inicial *</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{initialData ? 'Nova senha (Opcional)' : 'Senha inicial *'}</label>
         <input
           {...register('password')}
           type="password"
@@ -77,7 +108,8 @@ export default function UserForm({ onSuccess }: { onSuccess: () => void }) {
           className={inputClass}
         />
         {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
-        <p className="text-xs text-gray-400 mt-1">O usuário poderá alterar no primeiro acesso.</p>
+        {initialData && <p className="text-xs text-gray-400 mt-1">Preencha apenas se quiser alterar a senha.</p>}
+        {!initialData && <p className="text-xs text-gray-400 mt-1">O usuário poderá alterar no primeiro acesso.</p>}
       </div>
 
       {/* Botões */}
@@ -88,7 +120,7 @@ export default function UserForm({ onSuccess }: { onSuccess: () => void }) {
         </button>
         <button type="submit" disabled={isPending}
           className="px-4 py-2 text-sm bg-[#1a1a2e] text-white rounded-lg hover:bg-[#2d2d4e] disabled:opacity-50 transition-colors">
-          {isPending ? 'Criando...' : 'Criar Usuário'}
+          {isPending ? 'Salvando...' : (initialData ? 'Salvar Alterações' : 'Criar Usuário')}
         </button>
       </div>
     </form>

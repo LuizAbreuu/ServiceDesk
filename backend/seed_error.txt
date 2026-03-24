@@ -1,0 +1,37 @@
+C:\Users\luiz_\OneDrive\Documentos\ServiceDesk\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:320
+        throw new PrismaClientInitializationError(
+              ^
+
+
+PrismaClientInitializationError: `PrismaClient` needs to be constructed with a non-empty, valid `PrismaClientOptions`:
+
+```
+new PrismaClient({
+  ...
+})
+```
+
+or
+
+```
+constructor() {
+  super({ ... });
+}
+```
+          
+    at new t (C:\Users\luiz_\OneDrive\Documentos\ServiceDesk\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:320:15)
+    at bcrypt (C:\Users\luiz_\OneDrive\Documentos\ServiceDesk\backend\prisma\seed.ts:4:16)
+    at Object.<anonymous> (C:\Users\luiz_\OneDrive\Documentos\ServiceDesk\backend\prisma\seed.ts:31:4)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object.transformer (C:\Users\luiz_\OneDrive\Documentos\ServiceDesk\backend\node_modules\tsx\dist\register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at cjsLoader (node:internal/modules/esm/translators:266:5) {
+  clientVersion: '7.5.0',
+  errorCode: undefined,
+  retryable: undefined
+}
+
+Node.js v22.16.0

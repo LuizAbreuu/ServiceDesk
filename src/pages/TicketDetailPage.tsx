@@ -8,6 +8,8 @@ import StatusBadge from '../components/ui/StatusBadge';
 import CommentSection from '../components/tickets/CommentSection';
 import AttachmentSection from '../components/tickets/AttachmentSection';
 import TicketSidebar from '../components/tickets/TicketSidebar';
+import Modal from '../components/ui/Modal';
+import TicketForm from '../components/tickets/TicketForm';
 
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();

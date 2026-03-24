@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userService, type CreateUserPayload } from '../services/userService';
+import type { Role } from '../types';
 import toast from 'react-hot-toast';
 
 export function useUsers() {
@@ -31,7 +32,7 @@ export function useCreateUser() {
 export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<{ name: string; role: string; teamId: string }> }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<{ name: string; role: Role; teamId: string }> }) =>
       userService.update(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
@@ -51,5 +52,19 @@ export function useToggleUserStatus() {
       toast.success('Status atualizado!');
     },
     onError: () => toast.error('Erro ao alterar status.'),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => userService.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Usuário excluído!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erro ao excluir usuário.');
+    },
   });
 }

@@ -1,5 +1,5 @@
 import api from './api';
-import type { Ticket } from '../types';
+import type { Ticket, TicketHistoryEntry, TicketStatus } from '../types';
 
 export interface TicketFilters {
   category?: string | number;

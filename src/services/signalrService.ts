@@ -1,20 +1,21 @@
-import * as signalR from '@microsoft/signalr';
+import { io, Socket } from 'socket.io-client';
 
-const HUB_URL = import.meta.env.VITE_HUB_URL ?? 'https://localhost:7001/hubs/notifications';
+const HUB_URL = import.meta.env.VITE_HUB_URL ?? 'http://localhost:3000';
 
-let connection: signalR.HubConnection | null = null;
+let connection: Socket | null = null;
 
 export const signalrService = {
   async connect() {
-    connection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL, {
-        accessTokenFactory: () => localStorage.getItem('accessToken') ?? '',
-      })
-      .withAutomaticReconnect()
-      .build();
+    connection = io(HUB_URL, {
+      auth: {
+        token: localStorage.getItem('accessToken') ?? ''
+      }
+    });
 
-    await connection.start();
-    console.log('SignalR conectado');
+    connection.on('connect', () => {
+      console.log('Socket.IO conectado');
+    });
+
     return connection;
   },
 
@@ -27,6 +28,6 @@ export const signalrService = {
   },
 
   async disconnect() {
-    await connection?.stop();
+    connection?.disconnect();
   },
 };

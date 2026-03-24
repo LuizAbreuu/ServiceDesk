@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Plus, Pencil, PowerOff, Users } from 'lucide-react';
-import { useUsers, useTeams, useToggleUserStatus } from '../hooks/useUsers';
+import { Plus, Pencil, PowerOff, Trash2, Users } from 'lucide-react';
+import { useUsers, useTeams, useToggleUserStatus, useDeleteUser } from '../hooks/useUsers';
 import Modal from '../components/ui/Modal';
 import UserForm from '../components/users/UserForm';
 import type { User } from '../types';
@@ -26,7 +26,9 @@ function avatarColor(name: string) {
 }
 
 function UserRow({ user, onEdit }: { user: User; onEdit: (u: User) => void }) {
-  const { mutate: toggleStatus, isPending } = useToggleUserStatus();
+  const { mutate: toggleStatus, isPending: isToggling } = useToggleUserStatus();
+  const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
+  const isPending = isToggling || isDeleting;
   const initials = user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
   const isActive = (user as User & { isActive?: boolean }).isActive !== false;
 
@@ -87,6 +89,18 @@ function UserRow({ user, onEdit }: { user: User; onEdit: (u: User) => void }) {
             title={isActive ? 'Desativar' : 'Reativar'}
           >
             <PowerOff size={13} />
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm('Tem certeza que deseja excluir este usuário definitivamente?')) {
+                deleteUser(user.id);
+              }
+            }}
+            disabled={isPending}
+            className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors"
+            title="Excluir"
+          >
+            <Trash2 size={13} />
           </button>
         </div>
       </td>
@@ -260,7 +274,7 @@ export default function UsersPage() {
         onClose={() => setIsModalOpen(false)}
         title={editingUser ? 'Editar Usuário' : 'Novo Usuário'}
       >
-        <UserForm onSuccess={() => setIsModalOpen(false)} />
+        <UserForm onSuccess={() => setIsModalOpen(false)} initialData={editingUser || undefined} />
       </Modal>
     </div>
   );

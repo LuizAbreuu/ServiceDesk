@@ -1,0 +1,4 @@
+src/controllers/ticketController.ts(87,12): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../index.js'?
+src/controllers/ticketController.ts(107,12): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../index.js'?
+src/controllers/ticketController.ts(131,12): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../index.js'?
+src/controllers/ticketController.ts(159,12): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../index.js'?

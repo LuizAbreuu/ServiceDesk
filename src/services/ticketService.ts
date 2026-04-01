@@ -68,4 +68,8 @@ export const ticketService = {
   async escalate(ticketId: string): Promise<void> {
   await api.patch(`/tickets/${ticketId}/escalate`);
   },
+
+  async delete(ticketId: string): Promise<void> {
+    await api.delete(`/tickets/${ticketId}`);
+  },
 };

@@ -170,14 +170,14 @@ export default function LoginPage() {
           </form>
 
           {/* Hint de credenciais demo */}
-          <div className="mt-6 pt-5 border-t border-gray-100 text-center">
+          {/* <div className="mt-6 pt-5 border-t border-gray-100 text-center">
             <p className="text-xs text-gray-400 mb-1">Credenciais para teste:</p>
             <p className="text-xs text-gray-500">
               <span className="font-medium text-gray-700">admin@helpdesk.com</span>
               {' '}·{' '}
               <span className="font-medium text-gray-700">Admin@123456</span>
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Rodapé */}

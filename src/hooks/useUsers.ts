@@ -7,6 +7,7 @@ export function useUsers() {
   return useQuery({
     queryKey: ['users'],
     queryFn: userService.getAll,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -14,6 +15,7 @@ export function useTeams() {
   return useQuery({
     queryKey: ['teams'],
     queryFn: userService.getTeams,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

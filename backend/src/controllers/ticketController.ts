@@ -84,7 +84,7 @@ export const ticketController = {
     });
 
     // Notify connected clients
-    import('../index.js').then(({ io }) => io.emit('NewTicket', ticket));
+    io.emit('NewTicket', ticket);
 
     return res.status(201).json(ticket);
   },
@@ -104,7 +104,7 @@ export const ticketController = {
     });
 
     // Notify connected clients
-    import('../index.js').then(({ io }) => io.emit('TicketUpdated', { ticketId: id, updateType: 'CommentAdded', comment }));
+    io.emit('TicketUpdated', { ticketId: id, updateType: 'CommentAdded', comment });
 
     return res.status(201).json(comment);
   },
@@ -128,7 +128,7 @@ export const ticketController = {
       }
     });
 
-    import('../index.js').then(({ io }) => io.emit('TicketUpdated', { ticketId: id, updateType: 'Assigned', ticket }));
+    io.emit('TicketUpdated', { ticketId: id, updateType: 'Assigned', ticket });
 
     return res.json(ticket);
   },
@@ -156,7 +156,7 @@ export const ticketController = {
       }
     });
 
-    import('../index.js').then(({ io }) => io.emit('TicketUpdated', { ticketId: id, updateType: 'StatusChanged', ticket }));
+    io.emit('TicketUpdated', { ticketId: id, updateType: 'StatusChanged', ticket });
 
     return res.json(ticket);
   },
@@ -169,5 +169,66 @@ export const ticketController = {
       orderBy: { createdAt: 'desc' }
     });
     return res.json(history);
+  },
+
+  async escalate(req: any, res: Response) {
+    const id = req.params.id as string;
+    
+    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    
+    let newPriority = ticket.priority;
+    if (ticket.priority === 'Low') newPriority = 'Medium';
+    else if (ticket.priority === 'Medium') newPriority = 'High';
+    else if (ticket.priority === 'High') newPriority = 'Critical';
+    else if (ticket.priority === 'Critical') return res.status(400).json({ error: 'Already at maximum priority' });
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id },
+      data: { priority: newPriority }
+    });
+
+    await prisma.ticketHistory.create({
+      data: {
+        action: 'Escalated',
+        description: `Priority escalated to ${newPriority}`,
+        ticketId: id,
+        performedById: req.user.id
+      }
+    });
+
+    io.emit('TicketUpdated', { ticketId: id, updateType: 'Escalated', ticket: updatedTicket });
+
+    return res.json(updatedTicket);
+  },
+
+  async delete(req: any, res: Response) {
+    const id = req.params.id as string;
+    
+    // Only Admin should delete, but role check could also be in middleware
+    // We'll proceed with deletion assuming caller has permission (Admin)
+    
+    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    
+    // Prisma cascade delete may be required if history/comments/attachments exist
+    // If cascade is enabled in schema.prisma, this will succeed.
+    // If not, we might need to delete related records first. Let's just try delete.
+    try {
+      await prisma.ticket.delete({ where: { id } });
+      io.emit('TicketDeleted', { ticketId: id });
+      return res.status(204).send();
+    } catch (error: any) {
+      if (error.code === 'P2003') { // Foreign key constraint failed
+        // Clean up related records first
+        await prisma.comment.deleteMany({ where: { ticketId: id } });
+        await prisma.attachment.deleteMany({ where: { ticketId: id } });
+        await prisma.ticketHistory.deleteMany({ where: { ticketId: id } });
+        await prisma.ticket.delete({ where: { id } });
+        io.emit('TicketDeleted', { ticketId: id });
+        return res.status(204).send();
+      }
+      return res.status(500).json({ error: 'Failed to delete ticket' });
+    }
   }
 };

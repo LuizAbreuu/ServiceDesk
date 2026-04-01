@@ -1,7 +1,12 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle, ArrowUpRight, AlertTriangle } from 'lucide-react';
-import { useChangeStatus } from '../../hooks/useTicketDetail';
+import { CheckCircle, ArrowUpRight, AlertTriangle, Trash2 } from 'lucide-react';
+import { useChangeStatus, useAssignTicket, useEscalateTicket, useDeleteTicket } from '../../hooks/useTicketDetail';
+import { useUsers } from '../../hooks/useUsers';
+import { useAuth } from '../../context/AuthContext';
+import Modal from '../ui/Modal';
 import type { Ticket, TicketHistoryEntry } from '../../types';
 
 function SlaStatus({ deadline }: { deadline: string }) {
@@ -42,7 +47,30 @@ export default function TicketSidebar({
   ticket: Ticket;
   history: TicketHistoryEntry[];
 }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const isStandardUser = user?.role === 'User';
+  const isAdmin = user?.role === 'Admin';
+
   const { mutate: changeStatus, isPending } = useChangeStatus(ticket.id);
+  const { mutate: assign, isPending: isAssigning } = useAssignTicket(ticket.id);
+  const { mutate: escalate, isPending: isEscalating } = useEscalateTicket(ticket.id);
+  const { mutate: deleteTicket, isPending: isDeleting } = useDeleteTicket();
+  const { data: users = [] } = useUsers();
+
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState('');
+
+  const handleTransfer = () => {
+    if (!selectedAgent) return;
+    assign(selectedAgent, {
+      onSuccess: () => {
+        setIsTransferModalOpen(false);
+        setSelectedAgent('');
+      }
+    });
+  };
+
   const formattedSla = format(parseISO(ticket.slaDeadline), "dd/MM 'às' HH:mm");
   const formattedCreated = format(parseISO(ticket.createdAt), "dd/MM 'às' HH:mm");
   const formattedUpdated = format(parseISO(ticket.updatedAt), "dd/MM 'às' HH:mm");
@@ -53,7 +81,7 @@ export default function TicketSidebar({
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Ações</h3>
         <div className="space-y-2">
-          {ticket.status !== 'Resolved' && ticket.status !== 'Closed' && (
+          {!isStandardUser && ticket.status !== 'Resolved' && ticket.status !== 'Closed' && (
             <button
               disabled={isPending}
               onClick={() => changeStatus('Resolved')}
@@ -73,14 +101,40 @@ export default function TicketSidebar({
               Fechar Chamado
             </button>
           )}
-          <button className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-700 text-sm py-2 rounded-lg hover:bg-gray-50 transition-colors">
-            <ArrowUpRight size={14} />
-            Transferir Chamado
-          </button>
-          <button className="w-full flex items-center justify-center gap-2 border border-red-100 text-red-600 text-sm py-2 rounded-lg hover:bg-red-50 transition-colors">
-            <AlertTriangle size={14} />
-            Escalar Prioridade
-          </button>
+
+          {!isStandardUser && (
+            <>
+              <button 
+                onClick={() => setIsTransferModalOpen(true)}
+                className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-700 text-sm py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <ArrowUpRight size={14} />
+                Transferir Chamado
+              </button>
+              <button 
+                onClick={() => escalate()}
+                disabled={isEscalating}
+                className="w-full flex items-center justify-center gap-2 border border-orange-100 text-orange-600 text-sm py-2 rounded-lg hover:bg-orange-50 disabled:opacity-50 transition-colors">
+                <AlertTriangle size={14} />
+                Escalar Prioridade
+              </button>
+            </>
+          )}
+
+          {isAdmin && (
+            <button
+              onClick={() => {
+                if (window.confirm('Tem certeza que deseja excluir este chamado? Esta ação não pode ser desfeita.')) {
+                  deleteTicket(ticket.id, {
+                    onSuccess: () => navigate('/tickets')
+                  });
+                }
+              }}
+              disabled={isDeleting}
+              className="w-full flex items-center justify-center gap-2 border border-red-200 bg-red-50 text-red-600 text-sm py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors mt-4">
+              <Trash2 size={14} />
+              Excluir Chamado
+            </button>
+          )}
         </div>
       </div>
 
@@ -121,6 +175,43 @@ export default function TicketSidebar({
           )}
         </div>
       </div>
+
+      <Modal isOpen={isTransferModalOpen} onClose={() => setIsTransferModalOpen(false)} title="Transferir Chamado">
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Selecione o Agente ou Administrador
+            </label>
+            <select
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-[#6c63ff]"
+            >
+              <option value="">Selecione...</option>
+              {users.filter(u => u.role !== 'User').map(agent => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name} ({agent.role})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <button
+              onClick={() => setIsTransferModalOpen(false)}
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleTransfer}
+              disabled={!selectedAgent || isAssigning}
+              className="px-4 py-2 text-sm bg-[#6c63ff] text-white rounded-lg hover:bg-[#5b54e5] disabled:opacity-50 transition-colors"
+            >
+              {isAssigning ? 'Transferindo...' : 'Transferir'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

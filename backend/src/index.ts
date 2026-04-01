@@ -11,6 +11,10 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
+export const io = new Server(httpServer, {
+  cors: { origin: '*' }
+});
+
 // Configs
 app.use(cors());
 app.use(express.json());
@@ -31,10 +35,7 @@ app.use('/api', dashboardRoutes);
 // Global Error Handler
 app.use(errorMiddleware);
 
-// Socket.IO
-export const io = new Server(httpServer, {
-  cors: { origin: '*' }
-});
+// Socket.IO Events
 
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);

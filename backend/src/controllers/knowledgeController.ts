@@ -18,6 +18,7 @@ export const knowledgeController = {
     const articles = await prisma.article.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      take: 500,
       include: { author: true }
     });
 

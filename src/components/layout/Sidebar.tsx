@@ -5,16 +5,20 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/dashboard',  label: 'Dashboard',            icon: LayoutDashboard },
+  { to: '/dashboard',  label: 'Dashboard',            icon: LayoutDashboard, adminOnly: true },
   { to: '/tickets',    label: 'Chamados',              icon: Ticket          },
-  { to: '/knowledge',  label: 'Base de Conhecimento',  icon: BookOpen        },
-  { to: '/users',      label: 'Usuários',              icon: Users           },
-  { to: '/reports',    label: 'Relatórios',            icon: BarChart2       },
+  { to: '/knowledge',  label: 'Base de Conhecimento',  icon: BookOpen,        adminOnly: true },
+  { to: '/users',      label: 'Usuários',              icon: Users,           adminOnly: true },
+  { to: '/reports',    label: 'Relatórios',            icon: BarChart2,       adminOnly: true },
   { to: '/settings',   label: 'Configurações',         icon: Settings        },
 ];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+
+  const filteredNavItems = navItems.filter(item => 
+    !item.adminOnly || (user && ['Admin', 'Manager', 'Agent'].includes(user.role))
+  );
 
   return (
     <aside className="w-56 flex flex-col bg-[#1a1a2e] text-white shrink-0">
@@ -30,7 +34,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-4 space-y-1 px-2">
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {filteredNavItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

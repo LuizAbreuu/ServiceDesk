@@ -20,6 +20,18 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return user ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user || user.role === 'User') return <Navigate to="/tickets" replace />;
+  return <>{children}</>;
+}
+
+function RootRedirect() {
+  const { user } = useAuth();
+  if (user && user.role !== 'User') return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/tickets" replace />;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -29,12 +41,12 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} /> 
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
+              <Route index element={<RootRedirect />} />
+              <Route path="dashboard" element={<AdminRoute><DashboardPage /></AdminRoute>} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="tickets/:id" element={<TicketDetailPage />} />
-              <Route path="users" element={<UsersPage />} />
-              <Route path="knowledge" element={<KnowledgePage />} />
+              <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+              <Route path="knowledge" element={<AdminRoute><KnowledgePage /></AdminRoute>} />
             </Route>
           </Routes>
         </BrowserRouter>

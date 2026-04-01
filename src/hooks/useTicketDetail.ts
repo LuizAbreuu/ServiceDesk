@@ -69,3 +69,28 @@ export function useUploadAttachment(ticketId: string) {
     onError: () => toast.error('Erro ao anexar arquivo.'),
   });
 }
+
+export function useEscalateTicket(ticketId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => ticketService.escalate(ticketId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ticket', ticketId] });
+      qc.invalidateQueries({ queryKey: ['ticket-history', ticketId] });
+      toast.success('Prioridade escalada com sucesso!');
+    },
+    onError: () => toast.error('Erro ao escalar prioridade.'),
+  });
+}
+
+export function useDeleteTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ticketId: string) => ticketService.delete(ticketId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tickets'] });
+      toast.success('Chamado excluído com sucesso!');
+    },
+    onError: () => toast.error('Erro ao excluir chamado.'),
+  });
+}

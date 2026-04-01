@@ -21,6 +21,7 @@ const updateUserSchema = z.object({
 export const userController = {
   async getAll(req: Request, res: Response) {
     const users = await prisma.user.findMany({
+      take: 500,
       include: { team: true },
     });
     return res.json(users);
@@ -106,6 +107,7 @@ export const userController = {
 
   async getTeams(req: Request, res: Response) {
     const teams = await prisma.team.findMany({
+      take: 500,
       include: { members: true },
     });
     return res.json(teams);

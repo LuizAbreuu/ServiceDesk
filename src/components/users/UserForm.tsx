@@ -46,10 +46,15 @@ export default function UserForm({ onSuccess, initialData }: { onSuccess: () => 
     }
     
     // Convert teamId to undefined if it's empty string
-    const payload = {
+    const payload: any = {
       ...data,
       teamId: data.teamId === "" ? undefined : data.teamId
     };
+    
+    // Remove empty password to avoid backend validation error
+    if (!payload.password) {
+      delete payload.password;
+    }
 
     if (initialData) {
       update({ id: initialData.id, payload }, { onSuccess });

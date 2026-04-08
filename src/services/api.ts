@@ -14,11 +14,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Trata expiração de token (401)
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    if (error.response?.status === 401) {
+    // Trata expiração de token (401), mas ignora se for a requisição de login
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       localStorage.clear();
       window.location.href = '/login';
     }

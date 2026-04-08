@@ -88,8 +88,6 @@ O projeto é tipicamente um monorepo/estrutura dividida nas seguintes pastas pri
 
 *Aqui estão as imagens do sistema em funcionamento.*
 
-> **Dica para o Portfólio:** Salve as capturas de tela do seu sistema na pasta `public/` ou `src/assets/` e substitua as URLs dos placeholders abaixo pelos caminhos corretos das imagens (exemplo: `src/assets/tela-login.png`).
-
 <details>
 <summary><b>Clique para expandir e visualizar as imagens do sistema</b></summary>
 <br>

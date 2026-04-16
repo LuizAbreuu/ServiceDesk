@@ -13,9 +13,10 @@ export const authController = {
   async login(req: Request, res: Response) {
     const { email, password } = loginSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({
+    const user: any = await prisma.user.findUnique({
       where: { email },
-      include: { team: true }
+      include: { team: true },
+      omit: { password: false } as any
     });
 
     if (!user) {

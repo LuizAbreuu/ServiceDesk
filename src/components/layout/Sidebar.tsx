@@ -23,14 +23,14 @@ export default function Sidebar() {
   return (
     <aside className="w-56 flex flex-col bg-[#1a1a2e] text-white shrink-0">
       {/* Logo */}
-      <div className="p-4 border-b border-white/10">
+      <NavLink to="/dashboard" className="p-4 border-b border-white/10 block hover:bg-white/5 transition-colors">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-[#6c63ff] rounded-lg flex items-center justify-center">
             <span className="text-sm font-bold">HD</span>
           </div>
           <span className="font-semibold text-sm">HelpDesk</span>
         </div>
-      </div>
+      </NavLink>
 
       {/* Nav */}
       <nav className="flex-1 py-4 space-y-1 px-2">

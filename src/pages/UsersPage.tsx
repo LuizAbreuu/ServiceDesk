@@ -56,7 +56,7 @@ function UserRow({ user, onEdit }: { user: User; onEdit: (u: User) => void }) {
 
       {/* Time */}
       <td className="px-4 py-3 text-xs text-gray-500">
-        {user.teamId ?? '— sem time'}
+        {user.team?.name ?? '— sem time'}
       </td>
 
       {/* Status */}

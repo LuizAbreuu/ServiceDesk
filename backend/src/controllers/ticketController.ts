@@ -26,7 +26,7 @@ export const ticketController = {
         skip,
         take,
         orderBy: { createdAt: 'desc' },
-        include: { createdBy: true, assignedTo: true }
+        include: { createdBy: { include: { team: true } }, assignedTo: { include: { team: true } } }
       }),
       prisma.ticket.count({ where })
     ]);
@@ -44,8 +44,8 @@ export const ticketController = {
     const ticket = await prisma.ticket.findUnique({
       where: { id },
       include: {
-        createdBy: true,
-        assignedTo: true,
+        createdBy: { include: { team: true } },
+        assignedTo: { include: { team: true } },
         comments: { include: { author: true }, orderBy: { createdAt: 'asc' } },
         attachments: true
       }

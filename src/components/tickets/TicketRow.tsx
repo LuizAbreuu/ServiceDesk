@@ -58,7 +58,12 @@ export default function TicketRow({ ticket }: { ticket: Ticket }) {
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <Avatar name={ticket.createdBy.name} color={avatarColor(ticket.createdBy.name)} />
-          <span className="text-xs text-gray-600 truncate max-w-[90px]">{ticket.createdBy.name}</span>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-600 truncate max-w-[90px]">{ticket.createdBy.name}</span>
+            {ticket.createdBy.team?.name && (
+              <span className="text-[10px] text-gray-400 truncate max-w-[90px]" title={ticket.createdBy.team.name}>{ticket.createdBy.team.name}</span>
+            )}
+          </div>
         </div>
       </td>
 

@@ -12,6 +12,7 @@ export interface User {
   avatarUrl?: string;
   isActive?: boolean;
   teamId?: string;
+  team?: { id: string; name: string };
 }
 
 export interface Ticket {

@@ -83,7 +83,7 @@ export default function TicketDetailPage() {
             <p className="text-sm text-gray-600 leading-relaxed mb-4">{ticket.description}</p>
 
             <div className="flex flex-wrap gap-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
-              <span>Solicitante: <strong className="text-gray-700">{ticket.createdBy.name}</strong></span>
+              <span>Solicitante: <strong className="text-gray-700">{ticket.createdBy.name} {ticket.createdBy.team?.name ? `(${ticket.createdBy.team.name})` : ''}</strong></span>
               <span>Categoria: <strong className="text-gray-700">{ticket.category}</strong></span>
               <span>Aberto: <strong className="text-gray-700">{ago}</strong></span>
             </div>

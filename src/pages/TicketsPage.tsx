@@ -17,7 +17,7 @@ export default function TicketsPage() {
   return (
     <div className="space-y-4">
       {/* Cabeçalho */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Chamados</h1>
           <p className="text-sm text-gray-500">
@@ -26,7 +26,7 @@ export default function TicketsPage() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors"
+          className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors w-full sm:w-auto justify-center"
         >
           <Plus size={16} />
           Novo Chamado
@@ -37,7 +37,7 @@ export default function TicketsPage() {
       <TicketFiltersBar filters={filters} onChange={setFilters} />
 
       {/* Tabela */}
-      <div className={`bg-white rounded-xl border border-gray-200 overflow-hidden transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
+      <div className={`bg-white rounded-xl border border-gray-200 overflow-x-auto transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>

@@ -13,7 +13,12 @@ const navItems = [
   { to: '/settings',   label: 'Configurações',         icon: Settings        },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
 
   const filteredNavItems = navItems.filter(item => 
@@ -21,7 +26,7 @@ export default function Sidebar() {
   );
 
   return (
-    <aside className="w-56 flex flex-col bg-[#1a1a2e] text-white shrink-0">
+    <aside className={`fixed inset-y-0 left-0 z-40 w-56 flex flex-col bg-[#1a1a2e] text-white shrink-0 transform transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Logo */}
       <NavLink to="/dashboard" className="p-4 border-b border-white/10 block hover:bg-white/5 transition-colors">
         <div className="flex items-center gap-2">
@@ -38,6 +43,7 @@ export default function Sidebar() {
           <NavLink
             key={to}
             to={to}
+            onClick={onClose}
             className={({ isActive }: { isActive: boolean }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 isActive

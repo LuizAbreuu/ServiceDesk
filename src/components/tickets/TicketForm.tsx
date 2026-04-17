@@ -120,7 +120,7 @@ export default function TicketForm({ ticket, onSuccess }: Props) {
       </div>
 
       {/* Prioridade + Categoria */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade *</label>
           <select
@@ -150,7 +150,7 @@ export default function TicketForm({ ticket, onSuccess }: Props) {
       {isEditing && (
         <>
           {/* Status + Agente */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select

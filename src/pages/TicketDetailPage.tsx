@@ -66,7 +66,7 @@ export default function TicketDetailPage() {
           <TicketForm ticket={ticket} onSuccess={() => setIsEditOpen(false)} />
         </Modal>
 
-      <div className="grid grid-cols-[1fr_300px] gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 items-start">
         {/* Coluna principal */}
         <div className="space-y-4">
           {/* Header do chamado */}

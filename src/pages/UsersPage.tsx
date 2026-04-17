@@ -171,14 +171,14 @@ export default function UsersPage() {
   return (
     <div className="space-y-4">
       {/* Cabeçalho */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Usuários & Times</h1>
           <p className="text-sm text-gray-500">{users.length} usuários cadastrados</p>
         </div>
         <button
           onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
-          className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors"
+          className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors w-full sm:w-auto justify-center"
         >
           <Plus size={16} />
           Novo Usuário
@@ -186,12 +186,12 @@ export default function UsersPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(['users', 'teams'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors flex-1 sm:flex-none justify-center ${
               tab === t ? 'bg-[#1a1a2e] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
@@ -204,7 +204,7 @@ export default function UsersPage() {
       {tab === 'users' ? (
         <>
           {/* Filtros */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               placeholder="Buscar por nome ou e-mail..."
@@ -215,7 +215,7 @@ export default function UsersPage() {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 bg-white outline-none"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 bg-white outline-none w-full sm:w-auto"
             >
               <option value="">Todos os perfis</option>
               <option value="Admin">Admin</option>
@@ -226,7 +226,7 @@ export default function UsersPage() {
           </div>
 
           {/* Tabela */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>

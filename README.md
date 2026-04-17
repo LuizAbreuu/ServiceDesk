@@ -76,11 +76,15 @@ O projeto é tipicamente um monorepo/estrutura dividida nas seguintes pastas pri
 ## ⚙️ Funcionalidades Principais
 
 - 🔐 **Autenticação e Autorização:** Controle de acesso baseado em papéis (RBAC). Acesso hierárquico dividido por perfis informados no banco.
+- 📱 **Design Responsivo (Mobile-First):** Interfaces dinâmicas que se adaptam perfeitamente a smartphones e tablets, com menus recolhíveis (Drawer), tabelas com touch-scroll e formulários inteligentes.
+- 🛡️ **Segurança Avançada:** Reforço na proteção de dados com o Prisma implementando omissão global de dados sensíveis da API (senhas), e logout automático de segurança por inatividade (10 minutos).
+- 🏢 **Gestão de Departamentos:** Integração de times nativa (ex: TI, Manutenção, Facilities, RH) aos chamados para identificação visual ágil da origem dos tickets e métricas de setor.
 - 🎫 **Gerenciamento de Tickets:** Criação, designação, comentários internos/externos, priorização, status e amplo histórico do chamado.
 - 📚 **Base de Conhecimento:** Criação e consulta de artigos com categorias e tags para facilitar o autoatendimento do usuário final.
 - 👥 **Equipes e Usuários:** Gestão transparente dos usuários do sistema e criação flexível de equipes de atendimento.
 - ⚡ **Tempo Real:** Notificações e atualizações instantâneas de chamados através de WebSockets (Socket.IO).
 - 📊 **Dashboards e Métricas:** Visão consolidada e gráfica sobre dados de atendimentos e performance operacional.
+- 🚀 **Deploy SPA Otimizado:** Roteamento configurado no Vercel assegurando estabilidade (Zero 404s) em reloads da aplicação estruturada em React Router.
 
 ---
 

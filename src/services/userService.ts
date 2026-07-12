@@ -1,5 +1,5 @@
 import api from './api';
-import type { User } from '../types';
+import type { Role, User } from '../types';
 
 export interface Team {
   id: string;
@@ -11,14 +11,14 @@ export interface Team {
 export interface CreateUserPayload {
   name: string;
   email: string;
-  role: string;
+  role: Role;
   teamId?: string;
   password: string;
 }
 
 export const userService = {
-  async getAll(): Promise<User[]> {
-    const { data } = await api.get('/users');
+  async getAll(filters: { role?: Role } = {}): Promise<User[]> {
+    const { data } = await api.get('/users', { params: filters });
     return data;
   },
 
@@ -32,7 +32,7 @@ export const userService = {
     return data;
   },
 
-  async update(id: string, payload: Partial<User>): Promise<User> {
+  async update(id: string, payload: Partial<User & { password?: string }>): Promise<User> {
     const { data } = await api.put(`/users/${id}`, payload);
     return data;
   },

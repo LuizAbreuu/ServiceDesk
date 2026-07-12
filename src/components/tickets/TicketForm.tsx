@@ -2,10 +2,9 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
 import { useCreateTicket, useUpdateTicket } from '../../hooks/useTickets';
+import { useUsers } from '../../hooks/useUsers';
 import type { Ticket } from '../../types';
-import api from '../../services/api';
 
 // Schema base para criação
 const createSchema = z.object({
@@ -47,11 +46,7 @@ export default function TicketForm({ ticket, onSuccess }: Props) {
   const isPending = isCreating || isUpdating;
 
   // Busca agentes disponíveis (apenas no modo edição)
-  const { data: agents = [] } = useQuery({
-    queryKey: ['agents'],
-    queryFn: async () => (await api.get('/users?role=Agent')).data,
-    enabled: isEditing,
-  });
+  const { data: agents = [] } = useUsers({ role: 'Agent' });
 
   const {
     register,
@@ -88,7 +83,18 @@ export default function TicketForm({ ticket, onSuccess }: Props) {
 
   const onSubmit = (data: FormData) => {
     if (isEditing) {
-      update({ id: ticket.id, payload: data }, { onSuccess });
+      update({
+        id: ticket.id,
+        payload: {
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          category: data.category,
+          status: 'status' in data ? data.status : undefined,
+          assignedToId: 'assignedToId' in data ? (data.assignedToId || null) : undefined,
+          slaDeadline: 'slaDeadline' in data && data.slaDeadline ? new Date(data.slaDeadline).toISOString() : undefined,
+        },
+      }, { onSuccess });
     } else {
       create(data, { onSuccess });
     }

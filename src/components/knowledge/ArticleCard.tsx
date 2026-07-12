@@ -25,8 +25,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 interface Props {
   article: Article;
-  onEdit:   (a: Article) => void;
-  onDelete: (id: string) => void;
+  onEdit?:   (a: Article) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function ArticleCard({ article, onEdit, onDelete }: Props) {
@@ -38,7 +38,7 @@ export default function ArticleCard({ article, onEdit, onDelete }: Props) {
       className={`bg-white rounded-xl border p-5 transition-all hover:border-gray-300 cursor-pointer group ${
         isDraft ? 'border-gray-200 opacity-75' : 'border-gray-200'
       }`}
-      onClick={() => onEdit(article)}
+      onClick={() => onEdit?.(article)}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -69,23 +69,29 @@ export default function ArticleCard({ article, onEdit, onDelete }: Props) {
         </div>
 
         {/* Ações */}
-        <div
-          className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => onEdit(article)}
-            className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+        {(onEdit || onDelete) && (
+          <div
+            className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Pencil size={13} />
-          </button>
-          <button
-            onClick={() => onDelete(article.id)}
-            className="p-1.5 rounded-md border border-red-100 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <Trash2 size={13} />
-          </button>
-        </div>
+            {onEdit && (
+              <button
+                onClick={() => onEdit(article)}
+                className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Pencil size={13} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(article.id)}
+                className="p-1.5 rounded-md border border-red-100 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Métricas (apenas publicados) */}

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ticketService } from '../services/ticketService';
 import type { TicketStatus } from '../types';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export function useTicketDetail(id: string) {
   return useQuery({
@@ -29,7 +30,12 @@ export function useAddComment(ticketId: string) {
       qc.invalidateQueries({ queryKey: ['ticket', ticketId] });
       toast.success('Comentário adicionado!');
     },
-    onError: () => toast.error('Erro ao adicionar comentário.'),
+    onError: (error) => toast.error(getApiErrorMessage(error, {
+      fallback: 'Não foi possível adicionar o comentário.',
+      forbiddenMessage: 'Você não tem permissão para comentar neste chamado.',
+      notFoundMessage: 'Este chamado não está mais disponível para novos comentários.',
+      validationMessage: 'Escreva um comentário válido antes de enviar.',
+    })),
   });
 }
 
@@ -42,7 +48,12 @@ export function useChangeStatus(ticketId: string) {
       qc.invalidateQueries({ queryKey: ['tickets'] });
       toast.success('Status atualizado!');
     },
-    onError: () => toast.error('Erro ao atualizar status.'),
+    onError: (error) => toast.error(getApiErrorMessage(error, {
+      fallback: 'Não foi possível atualizar o status do chamado.',
+      forbiddenMessage: 'Você não tem permissão para alterar o status deste chamado.',
+      notFoundMessage: 'Este chamado não foi encontrado para atualização de status.',
+      conflictMessage: 'O status do chamado foi alterado em outra ação. Atualize a página e tente novamente.',
+    })),
   });
 }
 
@@ -54,7 +65,12 @@ export function useAssignTicket(ticketId: string) {
       qc.invalidateQueries({ queryKey: ['ticket', ticketId] });
       toast.success('Chamado atribuído!');
     },
-    onError: () => toast.error('Erro ao atribuir chamado.'),
+    onError: (error) => toast.error(getApiErrorMessage(error, {
+      fallback: 'Não foi possível atribuir o chamado.',
+      forbiddenMessage: 'Você não tem permissão para atribuir este chamado.',
+      notFoundMessage: 'O chamado ou o agente selecionado não está mais disponível.',
+      conflictMessage: 'A atribuição não pôde ser concluída com o estado atual do chamado.',
+    })),
   });
 }
 
@@ -66,7 +82,13 @@ export function useUploadAttachment(ticketId: string) {
       qc.invalidateQueries({ queryKey: ['ticket', ticketId] });
       toast.success('Arquivo anexado!');
     },
-    onError: () => toast.error('Erro ao anexar arquivo.'),
+    onError: (error) => toast.error(getApiErrorMessage(error, {
+      fallback: 'Não foi possível anexar o arquivo.',
+      forbiddenMessage: 'Você não tem permissão para anexar arquivos neste chamado.',
+      notFoundMessage: 'Este chamado não está mais disponível para receber anexos.',
+      conflictMessage: 'O arquivo não pôde ser anexado agora. Tente novamente em instantes.',
+      validationMessage: 'O arquivo enviado é inválido ou excede os limites aceitos.',
+    })),
   });
 }
 
@@ -79,7 +101,12 @@ export function useEscalateTicket(ticketId: string) {
       qc.invalidateQueries({ queryKey: ['ticket-history', ticketId] });
       toast.success('Prioridade escalada com sucesso!');
     },
-    onError: () => toast.error('Erro ao escalar prioridade.'),
+    onError: (error) => toast.error(getApiErrorMessage(error, {
+      fallback: 'Não foi possível escalar a prioridade do chamado.',
+      forbiddenMessage: 'Você não tem permissão para escalar este chamado.',
+      notFoundMessage: 'Este chamado não foi encontrado para escalonamento.',
+      conflictMessage: 'A prioridade já foi alterada recentemente. Atualize a página e tente novamente.',
+    })),
   });
 }
 
@@ -91,6 +118,11 @@ export function useDeleteTicket() {
       qc.invalidateQueries({ queryKey: ['tickets'] });
       toast.success('Chamado excluído com sucesso!');
     },
-    onError: () => toast.error('Erro ao excluir chamado.'),
+    onError: (error) => toast.error(getApiErrorMessage(error, {
+      fallback: 'Não foi possível excluir o chamado.',
+      forbiddenMessage: 'Você não tem permissão para excluir este chamado.',
+      notFoundMessage: 'Este chamado já não existe mais.',
+      conflictMessage: 'Não foi possível excluir o chamado por causa do estado atual dele.',
+    })),
   });
 }

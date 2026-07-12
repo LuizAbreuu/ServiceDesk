@@ -1,14 +1,29 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from "express";
+import { ZodError } from "zod";
+import { env } from "../config/env";
+import { AppError } from "../utils/errors";
 
-export const errorMiddleware = (err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
-
-  if (err.name === 'ZodError') {
-    return res.status(400).json({ error: 'Validation Error', details: err.errors });
+export function errorMiddleware(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+  if (err instanceof ZodError) {
+    return res.status(400).json({
+      error: "Validation Error",
+      details: err.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
   }
 
-  const status = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+      ...(err.details ? { details: err.details } : {}),
+    });
+  }
 
-  return res.status(status).json({ error: message });
-};
+  console.error(err);
+
+  return res.status(500).json({
+    error: env.nodeEnv === "production" ? "Internal Server Error" : "Unexpected server error",
+  });
+}

@@ -4,6 +4,10 @@ import { useUsers, useTeams, useToggleUserStatus, useDeleteUser } from '../hooks
 import Modal from '../components/ui/Modal';
 import UserForm from '../components/users/UserForm';
 import type { User } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { canCreateUser, canDeleteUser, canManageTargetUser } from '../utils/permissions';
+import InlineErrorState from '../components/ui/InlineErrorState';
+import { getApiErrorMessage } from '../utils/apiError';
 
 // Badge de perfil
 const ROLE_STYLES: Record<string, string> = {
@@ -25,12 +29,14 @@ function avatarColor(name: string) {
   return colors[name.charCodeAt(0) % colors.length];
 }
 
-function UserRow({ user, onEdit }: { user: User; onEdit: (u: User) => void }) {
+function UserRow({ user, onEdit, currentUser }: { user: User; onEdit: (u: User) => void; currentUser: User | null }) {
   const { mutate: toggleStatus, isPending: isToggling } = useToggleUserStatus();
   const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
   const isPending = isToggling || isDeleting;
   const initials = user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
   const isActive = (user as User & { isActive?: boolean }).isActive !== false;
+  const canManage = canManageTargetUser(currentUser, user);
+  const allowDelete = canDeleteUser(currentUser) && currentUser?.id !== user.id;
 
   return (
     <tr className="hover:bg-gray-50 transition-colors">
@@ -71,37 +77,43 @@ function UserRow({ user, onEdit }: { user: User; onEdit: (u: User) => void }) {
       {/* Ações */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => onEdit(user)}
-            className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
-            title="Editar"
-          >
-            <Pencil size={13} />
-          </button>
-          <button
-            onClick={() => toggleStatus({ id: user.id, active: isActive })}
-            disabled={isPending}
-            className={`p-1.5 rounded-md border transition-colors ${
-              isActive
-                ? 'border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600'
-                : 'border-green-100 text-green-400 hover:bg-green-50 hover:text-green-600'
-            }`}
-            title={isActive ? 'Desativar' : 'Reativar'}
-          >
-            <PowerOff size={13} />
-          </button>
-          <button
-            onClick={() => {
-              if (window.confirm('Tem certeza que deseja excluir este usuário definitivamente?')) {
-                deleteUser(user.id);
-              }
-            }}
-            disabled={isPending}
-            className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors"
-            title="Excluir"
-          >
-            <Trash2 size={13} />
-          </button>
+          {canManage && (
+            <button
+              onClick={() => onEdit(user)}
+              className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+              title="Editar"
+            >
+              <Pencil size={13} />
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={() => toggleStatus({ id: user.id, active: isActive })}
+              disabled={isPending}
+              className={`p-1.5 rounded-md border transition-colors ${
+                isActive
+                  ? 'border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600'
+                  : 'border-green-100 text-green-400 hover:bg-green-50 hover:text-green-600'
+              }`}
+              title={isActive ? 'Desativar' : 'Reativar'}
+            >
+              <PowerOff size={13} />
+            </button>
+          )}
+          {allowDelete && (
+            <button
+              onClick={() => {
+                if (window.confirm('Tem certeza que deseja excluir este usuário definitivamente?')) {
+                  deleteUser(user.id);
+                }
+              }}
+              disabled={isPending}
+              className="p-1.5 rounded-md border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors"
+              title="Excluir"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -153,13 +165,14 @@ function TeamsTab() {
 }
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
   const [tab, setTab] = useState<'users' | 'teams'>('users');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const { data: users = [], isLoading } = useUsers();
+  const { data: users = [], error, isError, isLoading, refetch } = useUsers();
 
   const filtered = users.filter((u) => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase())
@@ -176,13 +189,15 @@ export default function UsersPage() {
           <h1 className="text-xl font-semibold text-gray-900">Usuários & Times</h1>
           <p className="text-sm text-gray-500">{users.length} usuários cadastrados</p>
         </div>
-        <button
-          onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
-          className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors w-full sm:w-auto justify-center"
-        >
-          <Plus size={16} />
-          Novo Usuário
-        </button>
+        {canCreateUser(currentUser) && (
+          <button
+            onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
+            className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors w-full sm:w-auto justify-center"
+          >
+            <Plus size={16} />
+            Novo Usuário
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -226,7 +241,17 @@ export default function UsersPage() {
           </div>
 
           {/* Tabela */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          {isError ? (
+            <InlineErrorState
+              title="Falha ao carregar usuários"
+              description={getApiErrorMessage(error, {
+                fallback: 'Não foi possível carregar a lista de usuários agora.',
+                forbiddenMessage: 'Você não tem permissão para visualizar os usuários.',
+              })}
+              onAction={() => void refetch()}
+            />
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -250,6 +275,7 @@ export default function UsersPage() {
                       <UserRow
                         key={user.id}
                         user={user}
+                        currentUser={currentUser}
                         onEdit={(u) => { setEditingUser(u); setIsModalOpen(true); }}
                       />
                     ))
@@ -262,20 +288,23 @@ export default function UsersPage() {
                 Nenhum usuário encontrado.
               </div>
             )}
-          </div>
+            </div>
+          )}
         </>
       ) : (
         <TeamsTab />
       )}
 
       {/* Modal criar/editar usuário */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingUser ? 'Editar Usuário' : 'Novo Usuário'}
-      >
-        <UserForm onSuccess={() => setIsModalOpen(false)} initialData={editingUser || undefined} />
-      </Modal>
+      {canCreateUser(currentUser) && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingUser ? 'Editar Usuário' : 'Novo Usuário'}
+        >
+          <UserForm onSuccess={() => setIsModalOpen(false)} initialData={editingUser || undefined} />
+        </Modal>
+      )}
     </div>
   );
 }

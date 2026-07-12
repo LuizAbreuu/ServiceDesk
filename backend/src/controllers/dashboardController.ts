@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
-import { prisma } from '../prisma';
+import { Request, Response } from "express";
+import { prisma } from "../prisma";
 
 export const dashboardController = {
-  async getMetrics(req: Request, res: Response) {
+  async getMetrics(_req: Request, res: Response) {
     const openTickets = await prisma.ticket.count({
       where: { status: 'Open' }
     });

@@ -5,22 +5,39 @@ import type { User } from '../types';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  register: (name: string, email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+const getStoredToken = () => localStorage.getItem('accessToken') ?? sessionStorage.getItem('accessToken');
+
+function persistSession(tokens: { accessToken: string; refreshToken: string }, rememberMe: boolean) {
+  const storage = rememberMe ? localStorage : sessionStorage;
+  const alternateStorage = rememberMe ? sessionStorage : localStorage;
+
+  alternateStorage.removeItem('accessToken');
+  alternateStorage.removeItem('refreshToken');
+  storage.setItem('accessToken', tokens.accessToken);
+  storage.setItem('refreshToken', tokens.refreshToken);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = getStoredToken();
     if (token) {
       authService.getMe()
         .then(setUser)
-        .catch(() => localStorage.clear())
+        .catch(() => {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('refreshToken');
+        })
         .finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
@@ -57,10 +74,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  async function login(email: string, password: string) {
+  async function login(email: string, password: string, rememberMe = true) {
     const { tokens, user } = await authService.login({ email, password });
-    localStorage.setItem('accessToken', tokens.accessToken);
-    localStorage.setItem('refreshToken', tokens.refreshToken);
+    persistSession(tokens, rememberMe);
+    setUser(user);
+  }
+
+  async function register(name: string, email: string, password: string, rememberMe = true) {
+    const { tokens, user } = await authService.register({ name, email, password });
+    persistSession(tokens, rememberMe);
     setUser(user);
   }
 
@@ -70,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

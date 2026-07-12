@@ -3,7 +3,9 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Send, Lock } from 'lucide-react';
 import { useAddComment } from '../../hooks/useTicketDetail';
+import { useAuth } from '../../context/AuthContext';
 import type { Comment } from '../../types';
+import { canUseInternalComments } from '../../utils/permissions';
 
 function avatarColor(name: string) {
   const colors = [
@@ -62,6 +64,8 @@ export default function CommentSection({
 }) {
   const [text, setText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
+  const { user } = useAuth();
+  const allowInternalComments = canUseInternalComments(user);
   const { mutate, isPending } = useAddComment(ticketId);
 
   const handleSubmit = () => {
@@ -96,16 +100,20 @@ export default function CommentSection({
           className="w-full px-4 py-3 text-sm text-gray-700 outline-none resize-none placeholder-gray-400"
         />
         <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-t border-gray-100">
-          <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isInternal}
-              onChange={(e) => setIsInternal(e.target.checked)}
-              className="rounded"
-            />
-            <Lock size={11} />
-            Nota interna (visível apenas para agentes)
-          </label>
+          {allowInternalComments ? (
+            <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isInternal}
+                onChange={(e) => setIsInternal(e.target.checked)}
+                className="rounded"
+              />
+              <Lock size={11} />
+              Nota interna (visível apenas para agentes)
+            </label>
+          ) : (
+            <span className="text-xs text-gray-400">Comentário visível para todos os envolvidos.</span>
+          )}
           <button
             onClick={handleSubmit}
             disabled={!text.trim() || isPending}

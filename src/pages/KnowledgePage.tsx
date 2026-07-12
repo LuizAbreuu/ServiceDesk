@@ -6,6 +6,10 @@ import Modal from '../components/ui/Modal';
 import ArticleEditor from '../components/knowledge/ArticleEditor';
 import type { Article } from '../types';
 import type { ArticleFilters } from '../services/knowledgeService';
+import { useAuth } from '../context/AuthContext';
+import { canCreateArticle, canDeleteArticle, canEditArticle } from '../utils/permissions';
+import InlineErrorState from '../components/ui/InlineErrorState';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const CATEGORIES = ['Infraestrutura', 'Software', 'Hardware', 'Acesso & Senhas', 'Outros'];
 
@@ -18,11 +22,12 @@ const CATEGORY_ICONS: Record<string, { bg: string; color: string }> = {
 };
 
 export default function KnowledgePage() {
+  const { user } = useAuth();
   const [filters, setFilters]       = useState<ArticleFilters>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | undefined>();
 
-  const { data: articles = [], isLoading } = useArticles(filters);
+  const { data: articles = [], error, isError, isLoading, refetch } = useArticles(filters);
   const { mutate: deleteArticle } = useDeleteArticle();
 
   const published = articles.filter((a) => a.status === 'Published').length;
@@ -55,13 +60,15 @@ export default function KnowledgePage() {
             {published} artigos publicados · {drafts} rascunhos
           </p>
         </div>
-        <button
-          onClick={() => openEditor()}
-          className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors"
-        >
-          <Plus size={16} />
-          Novo Artigo
-        </button>
+        {canCreateArticle(user) && (
+          <button
+            onClick={() => openEditor()}
+            className="flex items-center gap-2 bg-[#1a1a2e] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#2d2d4e] transition-colors"
+          >
+            <Plus size={16} />
+            Novo Artigo
+          </button>
+        )}
       </div>
 
       {/* Busca global */}
@@ -84,7 +91,19 @@ export default function KnowledgePage() {
         )}
       </div>
 
+      {isError && (
+        <InlineErrorState
+          title="Falha ao carregar artigos"
+          description={getApiErrorMessage(error, {
+            fallback: 'Não foi possível carregar a base de conhecimento agora.',
+            forbiddenMessage: 'Você não tem permissão para acessar esta base de conhecimento.',
+          })}
+          onAction={() => void refetch()}
+        />
+      )}
+
       {/* Cards de categorias */}
+      {!isError && (
       <div className="grid grid-cols-5 gap-3">
         {CATEGORIES.map((cat) => {
           const style = CATEGORY_ICONS[cat];
@@ -108,8 +127,10 @@ export default function KnowledgePage() {
           );
         })}
       </div>
+      )}
 
       {/* Layout: Sidebar + Artigos */}
+      {!isError && (
       <div className="grid grid-cols-[200px_1fr] gap-5 items-start">
         {/* Sidebar */}
         <div className="space-y-4">
@@ -184,25 +205,28 @@ export default function KnowledgePage() {
               <ArticleCard
                 key={article.id}
                 article={article}
-                onEdit={openEditor}
-                onDelete={handleDelete}
+                onEdit={canEditArticle(user, article) ? openEditor : undefined}
+                onDelete={canDeleteArticle(user) ? handleDelete : undefined}
               />
             ))
           )}
         </div>
       </div>
+      )}
 
       {/* Modal editor */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingArticle ? 'Editar Artigo' : 'Novo Artigo'}
-      >
-        <ArticleEditor
-          article={editingArticle}
-          onSuccess={() => setIsModalOpen(false)}
-        />
-      </Modal>
+      {canCreateArticle(user) && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingArticle ? 'Editar Artigo' : 'Novo Artigo'}
+        >
+          <ArticleEditor
+            article={editingArticle}
+            onSuccess={() => setIsModalOpen(false)}
+          />
+        </Modal>
+      )}
     </div>
   );
 }

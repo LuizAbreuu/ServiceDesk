@@ -10,13 +10,24 @@ import AttachmentSection from '../components/tickets/AttachmentSection';
 import TicketSidebar from '../components/tickets/TicketSidebar';
 import Modal from '../components/ui/Modal';
 import TicketForm from '../components/tickets/TicketForm';
+import { useAuth } from '../context/AuthContext';
+import { canEditTicket } from '../utils/permissions';
+import InlineErrorState from '../components/ui/InlineErrorState';
+import { getApiErrorMessage, isApiErrorStatus } from '../utils/apiError';
 
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const { user } = useAuth();
 
-  const { data: ticket, isLoading } = useTicketDetail(id!);
+  const {
+    data: ticket,
+    error,
+    isError,
+    isLoading,
+    refetch,
+  } = useTicketDetail(id!);
   const { data: history = [] } = useTicketHistory(id!);
 
   if (isLoading) {
@@ -26,6 +37,29 @@ export default function TicketDetailPage() {
         <div className="h-48 bg-gray-100 rounded-xl" />
         <div className="h-64 bg-gray-100 rounded-xl" />
       </div>
+    );
+  }
+
+  if (isError) {
+    const title = isApiErrorStatus(error, 403)
+      ? 'Acesso restrito'
+      : isApiErrorStatus(error, 404)
+        ? 'Chamado indisponível'
+        : 'Falha ao carregar chamado';
+
+    const description = getApiErrorMessage(error, {
+      fallback: 'Não foi possível carregar os dados deste chamado agora.',
+      forbiddenMessage: 'Você não tem permissão para visualizar este chamado.',
+      notFoundMessage: 'Este chamado não foi encontrado ou já não está mais disponível.',
+    });
+
+    return (
+      <InlineErrorState
+        title={title}
+        description={description}
+        actionLabel="Tentar carregar novamente"
+        onAction={() => void refetch()}
+      />
     );
   }
 
@@ -53,18 +87,22 @@ export default function TicketDetailPage() {
           <ArrowLeft size={16} />
           Voltar para chamados
         </button>
-        <button
-          onClick={() => setIsEditOpen(true)}
-          className="flex items-center gap-2 text-sm border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-        <Pencil size={13} />
-          Editar
-        </button>
+        {canEditTicket(user) && (
+          <button
+            onClick={() => setIsEditOpen(true)}
+            className="flex items-center gap-2 text-sm border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Pencil size={13} />
+            Editar
+          </button>
+        )}
       </div>
 
+      {canEditTicket(user) && (
         <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Editar Chamado">
           <TicketForm ticket={ticket} onSuccess={() => setIsEditOpen(false)} />
         </Modal>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 items-start">
         {/* Coluna principal */}

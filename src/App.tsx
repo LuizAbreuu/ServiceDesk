@@ -9,6 +9,7 @@ import TicketsPage from './pages/TicketsPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import UsersPage from './pages/UsersPage';
 import KnowledgePage from './pages/KnowledgePage';
+import { canAccessDashboard, canAccessKnowledgePage, canAccessUsersPage } from './utils/permissions';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 30, retry: 1 } },
@@ -20,9 +21,17 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return user ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
+function GuardedRoute({
+  children,
+  check,
+  fallback = '/tickets',
+}: {
+  children: React.ReactNode;
+  check: (user: NonNullable<ReturnType<typeof useAuth>['user']>) => boolean;
+  fallback?: string;
+}) {
   const { user } = useAuth();
-  if (!user || user.role === 'User') return <Navigate to="/tickets" replace />;
+  if (!user || !check(user)) return <Navigate to={fallback} replace />;
   return <>{children}</>;
 }
 
@@ -42,11 +51,11 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} /> 
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
               <Route index element={<RootRedirect />} />
-              <Route path="dashboard" element={<AdminRoute><DashboardPage /></AdminRoute>} />
+              <Route path="dashboard" element={<GuardedRoute check={canAccessDashboard}><DashboardPage /></GuardedRoute>} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="tickets/:id" element={<TicketDetailPage />} />
-              <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
-              <Route path="knowledge" element={<AdminRoute><KnowledgePage /></AdminRoute>} />
+              <Route path="users" element={<GuardedRoute check={canAccessUsersPage}><UsersPage /></GuardedRoute>} />
+              <Route path="knowledge" element={<GuardedRoute check={canAccessKnowledgePage}><KnowledgePage /></GuardedRoute>} />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -7,12 +7,14 @@ import Pagination from '../components/ui/Pagination';
 import Modal from '../components/ui/Modal';
 import TicketForm from '../components/tickets/TicketForm';
 import type { TicketFilters } from '../services/ticketService';
+import InlineErrorState from '../components/ui/InlineErrorState';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export default function TicketsPage() {
   const [filters, setFilters] = useState<TicketFilters>({ page: 1, pageSize: 10 });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data, isLoading, isFetching } = useTickets(filters);
+  const { data, error, isError, isLoading, isFetching, refetch } = useTickets(filters);
 
   return (
     <div className="space-y-4">
@@ -36,8 +38,20 @@ export default function TicketsPage() {
       {/* Filtros */}
       <TicketFiltersBar filters={filters} onChange={setFilters} />
 
+      {isError && (
+        <InlineErrorState
+          title="Falha ao carregar chamados"
+          description={getApiErrorMessage(error, {
+            fallback: 'Não foi possível carregar a lista de chamados com os filtros atuais.',
+            forbiddenMessage: 'Você não tem permissão para visualizar esta lista de chamados.',
+          })}
+          onAction={() => void refetch()}
+        />
+      )}
+
       {/* Tabela */}
-      <div className={`bg-white rounded-xl border border-gray-200 overflow-x-auto transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
+      {!isError && (
+        <div className={`bg-white rounded-xl border border-gray-200 overflow-x-auto transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -72,15 +86,18 @@ export default function TicketsPage() {
             Nenhum chamado encontrado para os filtros selecionados.
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Paginação */}
-      <Pagination
-        page={filters.page ?? 1}
-        pageSize={filters.pageSize ?? 10}
-        total={data?.total ?? 0}
-        onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-      />
+      {!isError && (
+        <Pagination
+          page={filters.page ?? 1}
+          pageSize={filters.pageSize ?? 10}
+          total={data?.total ?? 0}
+          onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+        />
+      )}
 
       {/* Modal de novo chamado */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Chamado">

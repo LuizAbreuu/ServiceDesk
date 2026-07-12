@@ -1,16 +1,15 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  LayoutDashboard, Ticket, BookOpen, Users, BarChart2, Settings, LogOut,
+  LayoutDashboard, Ticket, BookOpen, Users, LogOut,
 } from 'lucide-react';
+import { canAccessDashboard, canAccessKnowledgePage, canAccessUsersPage } from '../../utils/permissions';
 
 const navItems = [
-  { to: '/dashboard',  label: 'Dashboard',            icon: LayoutDashboard, adminOnly: true },
-  { to: '/tickets',    label: 'Chamados',              icon: Ticket          },
-  { to: '/knowledge',  label: 'Base de Conhecimento',  icon: BookOpen,        adminOnly: true },
-  { to: '/users',      label: 'Usuários',              icon: Users,           adminOnly: true },
-  { to: '/reports',    label: 'Relatórios',            icon: BarChart2,       adminOnly: true },
-  { to: '/settings',   label: 'Configurações',         icon: Settings        },
+  { to: '/dashboard',  label: 'Dashboard',           icon: LayoutDashboard, visible: canAccessDashboard },
+  { to: '/tickets',    label: 'Chamados',            icon: Ticket, visible: () => true },
+  { to: '/knowledge',  label: 'Base de Conhecimento',icon: BookOpen, visible: canAccessKnowledgePage },
+  { to: '/users',      label: 'Usuários',            icon: Users, visible: canAccessUsersPage },
 ];
 
 interface SidebarProps {
@@ -21,9 +20,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
 
-  const filteredNavItems = navItems.filter(item => 
-    !item.adminOnly || (user && ['Admin', 'Manager', 'Agent'].includes(user.role))
-  );
+  const filteredNavItems = navItems.filter((item) => item.visible(user));
 
   return (
     <aside className={`fixed inset-y-0 left-0 z-40 w-56 flex flex-col bg-[#1a1a2e] text-white shrink-0 transform transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>

@@ -18,6 +18,23 @@ export interface PagedResult<T> {
   pageSize: number;
 }
 
+export interface TicketCreatePayload {
+  title: string;
+  description: string;
+  priority: Ticket['priority'];
+  category: string;
+}
+
+export interface TicketUpdatePayload {
+  title?: string;
+  description?: string;
+  priority?: Ticket['priority'];
+  category?: string;
+  status?: TicketStatus;
+  assignedToId?: string | null;
+  slaDeadline?: string;
+}
+
 export const ticketService = {
   async getAll(filters: TicketFilters = {}): Promise<PagedResult<Ticket>> {
     const { data } = await api.get('/tickets', { params: filters });
@@ -29,12 +46,12 @@ export const ticketService = {
     return data;
   },
 
-  async create(payload: Partial<Ticket>): Promise<Ticket> {
+  async create(payload: TicketCreatePayload): Promise<Ticket> {
     const { data } = await api.post('/tickets', payload);
     return data;
   },
 
-  async update(id: string, payload: Partial<Ticket>): Promise<Ticket> {
+  async update(id: string, payload: TicketUpdatePayload): Promise<Ticket> {
     const { data } = await api.put(`/tickets/${id}`, payload);
     return data;
   },
@@ -50,23 +67,21 @@ export const ticketService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  // Adicione dentro do objeto ticketService:
-
   async getHistory(ticketId: string): Promise<TicketHistoryEntry[]> {
-  const { data } = await api.get(`/tickets/${ticketId}/history`);
-  return data;
+    const { data } = await api.get(`/tickets/${ticketId}/history`);
+    return data;
   },
 
   async assign(ticketId: string, agentId: string): Promise<void> {
-  await api.patch(`/tickets/${ticketId}/assign`, { agentId });
+    await api.patch(`/tickets/${ticketId}/assign`, { agentId });
   },
 
   async changeStatus(ticketId: string, status: TicketStatus): Promise<void> {
-  await api.patch(`/tickets/${ticketId}/status`, { status });
+    await api.patch(`/tickets/${ticketId}/status`, { status });
   },
 
   async escalate(ticketId: string): Promise<void> {
-  await api.patch(`/tickets/${ticketId}/escalate`);
+    await api.patch(`/tickets/${ticketId}/escalate`);
   },
 
   async delete(ticketId: string): Promise<void> {

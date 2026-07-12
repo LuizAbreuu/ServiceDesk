@@ -1,5 +1,23 @@
-import { Request, Response } from 'express';
-import { prisma } from '../prisma';
+import { Request, Response } from "express";
+import { z } from "zod";
+import { prisma } from "../prisma";
+import { isStaff } from "../security/roles";
+import { ForbiddenError, NotFoundError } from "../utils/errors";
+
+const createArticleSchema = z.object({
+  title: z.string().min(3),
+  excerpt: z.string().min(10),
+  content: z.string().min(20),
+  status: z.enum(["Published", "Draft", "Archived"]).optional(),
+  category: z.string().min(2),
+  tags: z.array(z.string()).default([]),
+});
+
+const updateArticleSchema = createArticleSchema.partial();
+
+const voteSchema = z.object({
+  helpful: z.boolean(),
+});
 
 export const knowledgeController = {
   async getAll(req: Request, res: Response) {
@@ -7,7 +25,11 @@ export const knowledgeController = {
 
     const where: any = {};
     if (category) where.category = category;
-    if (status) where.status = status;
+    if (req.user?.role === "User") {
+      where.status = "Published";
+    } else if (status) {
+      where.status = status;
+    }
     if (search) {
       where.OR = [
         { title: { contains: String(search) } },
@@ -38,7 +60,13 @@ export const knowledgeController = {
       include: { author: true }
     });
 
-    if (!article) return res.status(404).json({ error: 'Article not found' });
+    if (!article) {
+      throw new NotFoundError("Article not found");
+    }
+
+    if (article.status !== "Published" && !isStaff(req.user!.role)) {
+      throw new ForbiddenError("You do not have access to this article");
+    }
 
     await prisma.article.update({
       where: { id },
@@ -52,7 +80,7 @@ export const knowledgeController = {
   },
 
   async create(req: any, res: Response) {
-    const { title, excerpt, content, status, category, tags = [] } = req.body;
+    const { title, excerpt, content, status, category, tags } = createArticleSchema.parse(req.body);
 
     const article = await prisma.article.create({
       data: {
@@ -75,7 +103,7 @@ export const knowledgeController = {
 
   async update(req: Request, res: Response) {
     const id = req.params.id as string;
-    const { title, excerpt, content, status, category, tags } = req.body;
+    const { title, excerpt, content, status, category, tags } = updateArticleSchema.parse(req.body);
 
     const data: any = {};
     if (title) data.title = title;
@@ -105,12 +133,14 @@ export const knowledgeController = {
 
   async vote(req: Request, res: Response) {
     const id = req.params.id as string;
-    const { helpful } = req.body; // simple voting implementation for now
+    const { helpful } = voteSchema.parse(req.body);
     
     // In a real scenario we'd track who voted to prevent duplicate votes
     // Here we're just estimating a percentage tweak for demonstration
     const article = await prisma.article.findUnique({ where: { id } });
-    if (!article) return res.status(404).send();
+    if (!article) {
+      throw new NotFoundError("Article not found");
+    }
 
     let newPercent = article.helpfulPercent;
     if (helpful) {

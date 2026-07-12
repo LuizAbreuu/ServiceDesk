@@ -4,21 +4,26 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateUser, useUpdateUser, useTeams } from '../../hooks/useUsers';
 import type { User } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { getAssignableRoles } from '../../utils/permissions';
+import { passwordRequirements, strongPasswordSchema } from '../../utils/password';
 
 const schema = z.object({
   name:     z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
   email:    z.string().email('E-mail inválido'),
   role:     z.enum(['Admin', 'Manager', 'Agent', 'User']),
   teamId:   z.string().optional(),
-  password: z.string().optional(),
+  password: strongPasswordSchema.optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export default function UserForm({ onSuccess, initialData }: { onSuccess: () => void; initialData?: User }) {
+  const { user: currentUser } = useAuth();
   const { mutate: create, isPending: isCreating } = useCreateUser();
   const { mutate: update, isPending: isUpdating } = useUpdateUser();
   const { data: teams = [] } = useTeams();
+  const assignableRoles = getAssignableRoles(currentUser);
 
   const isPending = isCreating || isUpdating;
 
@@ -40,8 +45,8 @@ export default function UserForm({ onSuccess, initialData }: { onSuccess: () => 
   }, [initialData, reset]);
 
   const onSubmit = (data: FormData) => {
-    if (!initialData && (!data.password || data.password.length < 8)) {
-      setError('password', { message: 'Senha inicial deve ter ao menos 8 caracteres' });
+    if (!initialData && !data.password) {
+      setError('password', { message: 'Informe uma senha forte para o primeiro acesso' });
       return;
     }
     
@@ -86,10 +91,11 @@ export default function UserForm({ onSuccess, initialData }: { onSuccess: () => 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Perfil *</label>
           <select {...register('role')} className={inputClass}>
-            <option value="User">Usuário</option>
-            <option value="Agent">Agente</option>
-            <option value="Manager">Gestor</option>
-            <option value="Admin">Admin</option>
+            {assignableRoles.map((role) => (
+              <option key={role} value={role}>
+                {role === 'User' ? 'Usuário' : role === 'Agent' ? 'Agente' : role === 'Manager' ? 'Gestor' : 'Admin'}
+              </option>
+            ))}
           </select>
         </div>
         <div>
@@ -109,11 +115,14 @@ export default function UserForm({ onSuccess, initialData }: { onSuccess: () => 
         <input
           {...register('password')}
           type="password"
-          placeholder="Mínimo 8 caracteres"
+          placeholder="Ex: HelpDesk@2026"
           className={inputClass}
         />
         {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
         {initialData && <p className="text-xs text-gray-400 mt-1">Preencha apenas se quiser alterar a senha.</p>}
+        <p className="text-xs text-gray-400 mt-1">
+          Requisitos: {passwordRequirements.join(', ')}.
+        </p>
         {!initialData && <p className="text-xs text-gray-400 mt-1">O usuário poderá alterar no primeiro acesso.</p>}
       </div>
 

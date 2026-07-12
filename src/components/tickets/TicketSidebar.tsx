@@ -8,6 +8,7 @@ import { useUsers } from '../../hooks/useUsers';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../ui/Modal';
 import type { Ticket, TicketHistoryEntry } from '../../types';
+import { canDeleteTicket, canResolveOrAssignTicket } from '../../utils/permissions';
 
 function SlaStatus({ deadline }: { deadline: string }) {
   const hours = differenceInHours(parseISO(deadline), new Date());
@@ -50,7 +51,8 @@ export default function TicketSidebar({
   const navigate = useNavigate();
   const { user } = useAuth();
   const isStandardUser = user?.role === 'User';
-  const isAdmin = user?.role === 'Admin';
+  const canManageTicket = canResolveOrAssignTicket(user, ticket);
+  const allowDeleteTicket = canDeleteTicket(user);
 
   const { mutate: changeStatus, isPending } = useChangeStatus(ticket.id);
   const { mutate: assign, isPending: isAssigning } = useAssignTicket(ticket.id);
@@ -81,7 +83,7 @@ export default function TicketSidebar({
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Ações</h3>
         <div className="space-y-2">
-          {!isStandardUser && ticket.status !== 'Resolved' && ticket.status !== 'Closed' && (
+          {canManageTicket && ticket.status !== 'Resolved' && ticket.status !== 'Closed' && (
             <button
               disabled={isPending}
               onClick={() => changeStatus('Resolved')}
@@ -102,7 +104,7 @@ export default function TicketSidebar({
             </button>
           )}
 
-          {!isStandardUser && (
+          {canManageTicket && (
             <>
               <button 
                 onClick={() => setIsTransferModalOpen(true)}
@@ -120,7 +122,7 @@ export default function TicketSidebar({
             </>
           )}
 
-          {isAdmin && (
+          {allowDeleteTicket && (
             <button
               onClick={() => {
                 if (window.confirm('Tem certeza que deseja excluir este chamado? Esta ação não pode ser desfeita.')) {

@@ -1,34 +1,64 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../prisma';
+import { NextFunction, Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import { prisma } from "../prisma";
+import { env } from "../config/env";
+import type { JwtPayload } from "../types/auth";
+import { parseRole } from "../security/roles";
+import { UnauthorizedError } from "../utils/errors";
 
-export interface AuthRequest extends Request {
-  user?: any;
-}
-
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
+function extractBearerToken(authHeader?: string): string {
   if (!authHeader) {
-    return res.status(401).json({ error: 'Token is missing' });
+    throw new UnauthorizedError("Token is missing");
   }
 
-  const [, token] = authHeader.split(' ');
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) {
+    throw new UnauthorizedError("Invalid authorization header");
+  }
 
+  return token;
+}
+
+export function verifyAccessToken(token: string): JwtPayload {
+  return jwt.verify(token, env.jwtSecret) as JwtPayload;
+}
+
+export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { sub: string };
-    
+    const token = extractBearerToken(req.headers.authorization);
+    const decoded = verifyAccessToken(token);
+
     const user = await prisma.user.findUnique({
-      where: { id: decoded.sub }
+      where: { id: decoded.sub },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatarUrl: true,
+        teamId: true,
+        isActive: true,
+      },
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+      throw new UnauthorizedError("User not found");
     }
 
-    req.user = user;
+    if (!user.isActive) {
+      throw new UnauthorizedError("User is inactive");
+    }
+
+    req.user = {
+      ...user,
+      role: parseRole(user.role),
+    };
     return next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
+  } catch (error) {
+    return next(
+      error instanceof UnauthorizedError
+        ? error
+        : new UnauthorizedError("Invalid token"),
+    );
   }
-};
+}
